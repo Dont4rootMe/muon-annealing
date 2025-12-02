@@ -8,8 +8,7 @@ class Muon(torch.optim.Optimizer):
             self,
             params: Iterable[torch.Tensor],
             lr=0.02,
-            odd_polinom_coef: Iterable[float] = (1,1,1),
-            
+            odd_polinom_coef: Iterable[float] = (3.4445, -4.7750,  2.0315),
             ):
         defaults = dict(lr=lr,odd_polinom_coef=odd_polinom_coef)
         super().__init__(params, defaults)
