@@ -9,8 +9,9 @@ class Muon(torch.optim.Optimizer):
             params: Iterable[torch.Tensor],
             lr=0.02,
             odd_polinom_coef: Iterable[float] = (3.4445, -4.7750,  2.0315),
+            NS_n: int=5,
             ):
-        defaults = dict(lr=lr,odd_polinom_coef=odd_polinom_coef)
+        defaults = dict(lr=lr,odd_polinom_coef=odd_polinom_coef, NS_n=NS_n)
         super().__init__(params, defaults)
         self.params = params
     
@@ -25,18 +26,19 @@ class Muon(torch.optim.Optimizer):
             lr = group['lr']
             for p in group['params']:
                 p: torch.Tensor
-                if p.ndim < 2:
-                    continue
                 if p.grad is None:
                     continue
-                p.data = p.data - lr * self.orthagonal(p.grad.data)
+                if p.ndim < 2:
+                    p.data = p.data - lr * p.grad.data
+                    continue
+                p.data = p.data - lr * self.orthagonal(p.grad.data, n_step=group['NS_n'])
         return loss
 
     def orthagonal(self, X: torch.Tensor, odd_polinom_coef=None, n_step: int = 1):
         X = X / (torch.linalg.norm(X) + 1e-16)
+        X_sqr = X @ X.mT
         for _ in range(n_step):
-            X_sqr = X @ X.T
-            ans = torch.zeros(X.size())
+            ans = torch.zeros(X.size(), device=X.device)
             summand = X
             if odd_polinom_coef is None:
                 odd_polinom_coef = self.defaults['odd_polinom_coef']
